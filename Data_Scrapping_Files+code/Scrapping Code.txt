@@ -1,0 +1,56 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+
+data = []
+
+url = "https://www.coursera.org/browse/data-science"
+
+page = requests.get(url)
+
+soup = BeautifulSoup(page.text,"html.parser")
+
+if soup.title.text == "404 Not Found":
+    print("404 Not Found")
+else:
+    all_books = soup.find_all("div",class_="css-1wkifag") 
+    Links =[]
+    for book in all_books:
+        item = {}
+
+        item['Title'] = book.find("h2", class_="cds-119").get_text()
+        item['uni'] = book.find("span", class_="css-1yvhcfv").get_text()
+        item['type'] = book.find("p", class_="css-vac8rf").get_text()
+        item['img'] = book.find("img").attrs["src"]
+        link = book.find("a").attrs["to"]
+        data.append(item)
+
+        Links.append(link)
+
+
+df = pd.DataFrame(data)
+df.head()
+
+base_url = "https://www.coursera.org"
+
+for i, item in zip(Links, data):
+    if i.startswith("/"):
+        Link_url = base_url + i
+    else:
+        Link_url = i  
+
+    Linkpage = requests.get(Link_url)
+    soup = BeautifulSoup(Linkpage.text, "html.parser")
+
+    item['Title'] = soup.find("h1", class_="cds-119").get_text(strip=True) if soup.find("h1", class_="cds-119") else "N/A"
+    item['Rating'] = soup.find("div", class_="cds-119 cds-Typography-base css-h1jogs cds-121").get_text(strip=True) if soup.find("div", class_="cds-119 cds-Typography-base css-h1jogs cds-121") else "N/A"
+    item['Modules'] = soup.find("div", class_="css-fk6qfz").get_text(strip=True) if soup.find("div", class_="css-fk6qfz") else "N/A"
+    item['Reviews'] = soup.find("p", class_="css-vac8rf").get_text(strip=True) if soup.find("p", class_="css-vac8rf") else "N/A"
+
+df = pd.DataFrame(data)
+
+df.to_excel("DataScienceData.xlsx", index=False)
+df.to_csv("DataScienceData.csv", index=False)
+
+print(df.head()) 

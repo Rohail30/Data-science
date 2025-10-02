@@ -1,0 +1,44 @@
+import pandas as pd
+
+df = pd.read_excel("OpenUniversity.xlsx")
+
+print(df.head())
+df.shape
+
+print(df.info())  
+
+df['Duration'] = df['Duration'].astype('object')
+df['Price'] = df['Price'].astype(float)
+
+print(df.dtypes)
+
+print(df.describe(include='all'))
+
+print(df.isnull().sum()) 
+
+num_duplicates = df.duplicated().sum()
+
+print("Number of duplicate rows:", num_duplicates)
+
+df['Type'] = df['Type'].replace('', None)  
+df['Type'] = df['Type'].fillna('Unknown')
+
+df['Reviews'] = df['Reviews'].replace('', None).fillna(0).astype(float)
+
+df['Duration'] = df['Duration'].astype(str) + " hours"
+
+df = df.dropna(thresh=int(len(df.columns) * 0.7), axis=0)  
+df = df.drop_duplicates()
+
+df['Title'] = df['Title'].str.lower()
+df['Source'] = df['Source'].str.lower()
+df['Type'] = df['Type'].str.lower()
+df['Duration'] = df['Duration'].str.lower()
+df['Category'] = df['Category'].str.lower()
+df['Reviews'] = df['Reviews'].astype(int)
+
+print(df.info()) 
+print(df.head())
+
+cleaned_file_path = '/content/cleaned-OpenUniversity.xlsx'
+df.to_excel(cleaned_file_path, index=False)

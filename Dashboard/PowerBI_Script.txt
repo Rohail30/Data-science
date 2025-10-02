@@ -1,0 +1,37 @@
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+
+# Use the dataset provided by Power BI
+data = dataset
+
+# Clean and handle missing values
+data['Price'] = data['Price'].replace('[^\d.]', '', regex=True)  # Remove non-numeric characters
+data['Price'] = pd.to_numeric(data['Price'], errors='coerce')  # Convert to numeric
+data['Price'] = data['Price'].fillna(data['Price'].mean())  # Replace NaN with the mean
+data['Rating'] = pd.to_numeric(data['Rating'], errors='coerce')
+data['Reviews'] = pd.to_numeric(data['Reviews'], errors='coerce')
+data = data.fillna(0)
+
+# Add a feature for unrated courses
+data['Is_Unrated'] = (data['Reviews'] == 0).astype(int)
+
+# Select predictors and target variable
+X = data[['Type', 'Category', 'Country', 'Price', 'Reviews', 'Is_Unrated']]
+y = data['Rating']
+
+# Preprocess categorical data and scale numeric features
+X = pd.get_dummies(X)
+scaler = MinMaxScaler()
+X[['Price', 'Reviews']] = scaler.fit_transform(X[['Price', 'Reviews']])
+
+# Train the model
+model = GradientBoostingRegressor()
+model.fit(X, y)
+
+# Predict ratings for the entire dataset
+data['Predicted_Rating'] = model.predict(X)
+
+# Return the dataset with predictions
+result = data

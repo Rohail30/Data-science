@@ -1,0 +1,41 @@
+import pandas as pd
+import numpy as np
+import os
+
+input_folder = r'C:\Users\HP\Documents\data science'
+output_folder = r'C:\Users\HP\Documents\clean data'
+
+os.makedirs(output_folder, exist_ok=True)
+
+for file_name in os.listdir(input_folder):
+    if file_name.endswith('.xlsx'): 
+        file_path = os.path.join(input_folder, file_name)
+       
+        df = pd.read_excel(file_path)
+        df['Title'] = df['Title'].str.strip().str.title()  
+        df['uni'] = df['uni'].str.strip().str.title()  
+        df['reviews and ratings'] = df['reviews and ratings'].astype(str)
+        
+        df['ratings'] = df['reviews and ratings'].str.extract(r'(\d+\.\d+)').astype(float)
+        df['reviews'] = df['reviews and ratings'].str.extract(r'\((\d+)').astype(float)
+        
+        df.drop('reviews and ratings', axis=1, inplace=True)
+        
+        df['duration_value'] = df['duration'].str.extract(r'(\d+)').astype(float)
+       
+        df['duration_unit'] = df['duration'].str.extract(r'(\w+)$')
+        df['duration_in_weeks'] = df.apply(
+        lambda x: int(x['duration_value']) if pd.notna(x['duration_value']) and x['duration_unit'] == 'weeks'
+        else int(x['duration_value'] // 7) if pd.notna(x['duration_value'])
+        else 'unknown',
+        axis=1
+        )
+        df.drop(['duration', 'duration_value', 'duration_unit'], axis=1, inplace=True)
+        df.drop_duplicates(inplace=True) 
+        df.replace('N/A', np.nan, inplace=True)
+        df.fillna('Unknown', inplace=True)  
+        
+        cleaned_file_path = os.path.join(output_folder, file_name)
+        df.to_excel(cleaned_file_path, index=False)
+        print(f"Cleaned and saved: {file_name}")
+print("All files have been cleaned and saved!")
